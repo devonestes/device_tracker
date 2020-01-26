@@ -16,7 +16,15 @@ defmodule DeviceTrackerWeb.Router do
   scope "/", DeviceTrackerWeb do
     pipe_through :browser
 
-    get "/", PageController, :index
+    resources "/devices", DeviceController, only: [:index, :show]
+  end
+
+  scope "/api", DeviceTrackerWeb.Api do
+    pipe_through :api
+
+    resources "/devices", DeviceController, only: [:create, :update, :delete] do
+      resources "/measurements", MeasurementController, only: [:create]
+    end
   end
 
   # Other scopes may use custom stacks.

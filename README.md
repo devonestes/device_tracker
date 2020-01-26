@@ -49,6 +49,8 @@ includes the following options:
 ## Wallaby integration tests (UI and API)
 * UI only displays 3 measurement types even if a fourth is added.
 * UI shows data for a device that is off even though it shouldn't.
+* UI shows groups with the fewest devices first, but should show groups with the most devices
+    first.
 * Return 500 for the API because of malformed JSON (include a tuple or
   something that can't be encoded).
 

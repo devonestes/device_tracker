@@ -14,7 +14,7 @@ defmodule DeviceTracker.DeviceTest do
   end
 
   describe "add_measurement/3" do
-    test "allows us to register a device" do
+    test "Allows us to add measurements" do
       name = "lightbulb2"
       measurement = "power_used"
       Device.add_device(name, [measurement])

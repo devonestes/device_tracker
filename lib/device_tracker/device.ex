@@ -4,7 +4,12 @@ defmodule DeviceTracker.Device do
   ### API
 
   def add_device(name, measurements) do
-    {:ok, _} = DynamicSupervisor.start_child(DeviceTracker.DynamicSupervisor, {__MODULE__, {measurements, name}})
+    {:ok, _} =
+      DynamicSupervisor.start_child(
+        DeviceTracker.DynamicSupervisor,
+        {__MODULE__, {measurements, name}}
+      )
+
     name
   end
 
@@ -12,14 +17,14 @@ defmodule DeviceTracker.Device do
     name
     |> pid_for()
     |> Agent.update(fn measurements ->
-         update_in(measurements[measurement], &[value | &1])
-       end)
+      update_in(measurements[measurement], &[value | &1])
+    end)
   end
-  
+
   def get_measurements(name, measurement) do
     name
     |> pid_for()
-    |> Agent.get(&(&1[measurement]))
+    |> Agent.get(& &1[measurement])
   end
 
   ### CALLBACKS
