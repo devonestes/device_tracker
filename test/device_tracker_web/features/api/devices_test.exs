@@ -2,7 +2,8 @@ defmodule DeviceTrackerWeb.Features.Api.DevicesTest do
   use DeviceTrackerWeb.FeatureCase, async: true
 
   describe "POST /api/devices" do
-    test "devices can be created" do
+    @tag :skip
+    test "creates a new device" do
       params = %{name: "device"}
       path = device_path(:create)
       assert {:ok, _} = request(:post, path, Jason.encode!(params))

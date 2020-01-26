@@ -3,7 +3,7 @@ defmodule DeviceTrackerWeb.Features.Api.MeasurementsTest do
 
   describe "POST /devices/:id/measurements" do
     @tag :skip
-    test "can create a measurement", %{session: session} do
+    test "can create a measurement", %{session: _session} do
     end
   end
 end

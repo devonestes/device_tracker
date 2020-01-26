@@ -1,7 +1,7 @@
-defmodule DeviceTracker.DeviceTest do
+defmodule DeviceTracker.Devices.DeviceTest do
   use ExUnit.Case, async: true
 
-  alias DeviceTracker.Device
+  alias DeviceTracker.Devices.Device
 
   describe "add_device/2" do
     test "allows us to register a device" do
@@ -9,7 +9,13 @@ defmodule DeviceTracker.DeviceTest do
       measurement = "power_used"
       assert Device.add_device(name, [measurement]) == name
       assert Registry.count(DeviceTracker.Registry) == 1
-      assert DynamicSupervisor.count_children(DeviceTracker.DynamicSupervisor) == %{active: 1, specs: 1, supervisors: 0, workers: 1}
+
+      assert DynamicSupervisor.count_children(DeviceTracker.DynamicSupervisor) == %{
+               active: 1,
+               specs: 1,
+               supervisors: 0,
+               workers: 1
+             }
     end
   end
 

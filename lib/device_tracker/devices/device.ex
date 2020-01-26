@@ -1,4 +1,4 @@
-defmodule DeviceTracker.Device do
+defmodule DeviceTracker.Devices.Device do
   use Agent
 
   ### API
@@ -25,6 +25,22 @@ defmodule DeviceTracker.Device do
     name
     |> pid_for()
     |> Agent.get(& &1[measurement])
+  end
+
+  def get(name) do
+    {:ok, %{}}
+  end
+
+  def list_all() do
+    {:ok, %{}}
+  end
+
+  def update(device, settings) do
+    {:ok, %{}}
+  end
+
+  def delete(name) do
+    {:ok, %{}}
   end
 
   ### CALLBACKS
