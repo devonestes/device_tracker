@@ -31,4 +31,34 @@ defmodule DeviceTracker.Devices.DeviceTest do
       assert Device.get_measurements(name, measurement) == [2, 1]
     end
   end
+
+  describe "get_measurements/2" do
+    @tag :skip
+    test "gets measurements for a given device" do
+    end
+  end
+
+  describe "get/1" do
+    @tag :skip
+    test "gets all information for the given device" do
+    end
+  end
+
+  describe "list_all/0" do
+    @tag :skip
+    test "lists all information for all devices" do
+    end
+  end
+
+  describe "update/2" do
+    @tag :skip
+    test "updates settings for the given device" do
+    end
+  end
+
+  describe "delete/1" do
+    @tag :skip
+    test "deletes the given device" do
+    end
+  end
 end

@@ -1,4 +1,28 @@
 defmodule DeviceTracker.Devices.Device do
+  @moduledoc """
+  Represents a device. A device looks something like this:
+
+  %{
+    name: "Lightbulb",
+    group_name: "Living room",
+    power_status: :on,
+    max_measurements: 20,
+    measurements: %{
+      power_usage: %{
+        measurements: [23, 13, 81, 15],
+        max_measurements: 4,
+        in_warning: false,
+        warning_threshold: 50
+      },
+      amperage: %{
+        measurements: [21, 19, 19, 21, 32, 10],
+        max_measurements: 8,
+        in_warning: false,
+        warning_threshold: 35
+    }
+  }
+  """
+
   use Agent
 
   ### API
