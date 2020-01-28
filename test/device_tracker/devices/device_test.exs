@@ -7,7 +7,10 @@ defmodule DeviceTracker.Devices.DeviceTest do
     test "allows us to register a device" do
       name = "lightbulb"
       measurement = "power_used"
-      assert Device.add_device(name, [measurement]) == name
+
+      assert {:ok, %{measurements: ["power_used"], name: "lightbulb"}} =
+               Device.add_device(name, [measurement])
+
       assert Registry.count(DeviceTracker.Registry) == 1
 
       assert DynamicSupervisor.count_children(DeviceTracker.DynamicSupervisor) == %{

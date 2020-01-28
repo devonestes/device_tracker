@@ -34,7 +34,7 @@ defmodule DeviceTracker.Devices.Device do
         {__MODULE__, {measurements, name}}
       )
 
-    name
+    {:ok, %{name: name, measurements: measurements}}
   end
 
   def add_measurement(name, measurement, value) do
@@ -52,15 +52,33 @@ defmodule DeviceTracker.Devices.Device do
   end
 
   def get(name) do
-    {:ok, %{}}
+    device =
+      name
+      |> pid_for()
+      |> Agent.get(& &1)
+
+    {:ok, device}
   end
 
   def list_all() do
-    {:ok, %{}}
+    {:ok, [%{}]}
   end
 
-  def update(device, settings) do
-    {:ok, %{}}
+  def update(name, settings) do
+    settings =
+      settings
+      |> Enum.map(fn {k, v} -> {String.to_atom(k), v} end)
+      |> Map.new()
+
+    pid = pid_for(name)
+
+    device =
+      Agent.get_and_update(pid, fn state ->
+        new_state = Map.merge(settings, state)
+        {new_state, new_state}
+      end)
+
+    {:ok, device}
   end
 
   def delete(name) do

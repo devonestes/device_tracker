@@ -9,12 +9,13 @@ defmodule DeviceTrackerWeb.Api.DeviceController do
   end
 
   def update(conn, params) do
-    {:ok, device} = Device.update(params["name"], params["settings"])
+    {id, settings} = Map.pop(params, "id")
+    {:ok, device} = Device.update(id, settings)
     json(conn, device)
   end
 
   def delete(conn, params) do
-    {:ok, device} = Device.delete(params["name"])
+    {:ok, device} = Device.delete(params["id"])
     json(conn, device)
   end
 end
