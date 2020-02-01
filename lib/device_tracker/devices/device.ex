@@ -52,12 +52,10 @@ defmodule DeviceTracker.Devices.Device do
   end
 
   def get(name) do
-    device =
-      name
-      |> pid_for()
-      |> Agent.get(& &1)
-
-    {:ok, device}
+    case pid_for(name) do
+      nil -> {:error, :not_found}
+      pid -> {:ok, Agent.get(pid, & &1)}
+    end
   end
 
   def list_all() do
@@ -82,7 +80,10 @@ defmodule DeviceTracker.Devices.Device do
   end
 
   def delete(name) do
-    {:ok, %{}}
+    pid = pid_for(name)
+    device = get(name)
+    :ok = DynamicSupervisor.terminate_child(DeviceTracker.DynamicSupervisor, pid)
+    device
   end
 
   ### CALLBACKS
@@ -94,7 +95,9 @@ defmodule DeviceTracker.Devices.Device do
   end
 
   defp pid_for(name) do
-    [{pid, _}] = Registry.lookup(DeviceTracker.Registry, name)
-    pid
+    case Registry.lookup(DeviceTracker.Registry, name) do
+      [{pid, _}] -> pid
+      _ -> nil
+    end
   end
 end

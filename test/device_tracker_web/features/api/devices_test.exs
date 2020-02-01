@@ -29,8 +29,15 @@ defmodule DeviceTrackerWeb.Features.Api.DevicesTest do
   end
 
   describe "DELETE /devices/:id" do
-    @tag :skip
     test "deletes a device" do
+      measurements = ["power_usage"]
+      name =  "device3"
+      Device.add_device(name, measurements)
+
+      path = device_path(:delete, name)
+      assert {:ok, %{status_code: 200, body: body}} = request(:delete, path)
+      assert %{} = Jason.decode!(body)
+      assert {:error, :not_found} = Device.get(name)
     end
   end
 end
