@@ -4,6 +4,9 @@ defmodule DeviceTrackerWeb.FeatureCase do
   using do
     quote do
       use Wallaby.DSL
+
+      import Wallaby.Query
+
       alias DeviceTrackerWeb.{Endpoint, Router.Helpers}
 
       @endpoint Endpoint.url()

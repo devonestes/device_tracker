@@ -4,7 +4,7 @@ defmodule DeviceTrackerWeb.DeviceController do
   alias DeviceTracker.Devices.Device
 
   def index(conn, _params) do
-    devices = Device.list_all()
+    {:ok, devices} = Device.list_all()
     render(conn, "index.html", devices: devices)
   end
 

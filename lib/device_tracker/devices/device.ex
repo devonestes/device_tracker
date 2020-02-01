@@ -64,7 +64,17 @@ defmodule DeviceTracker.Devices.Device do
   end
 
   def list_all() do
-    {:ok, [%{}]}
+    devices =
+      DeviceTracker.Registry
+      |> Registry.select([{{:"$1", :_, :_}, [], [:"$1"]}])
+      |> Enum.flat_map(fn name ->
+        case get(name) do
+          {:ok, device} -> [device]
+          _ -> []
+        end
+      end)
+
+    {:ok, devices}
   end
 
   def update(name, settings) do
@@ -96,6 +106,7 @@ defmodule DeviceTracker.Devices.Device do
   def start_link({measurements, name}) do
     starting = fn ->
       %{
+        name: name,
         measurements:
           Map.new(for key <- measurements, do: {String.to_atom(key), %{measurements: []}})
       }
