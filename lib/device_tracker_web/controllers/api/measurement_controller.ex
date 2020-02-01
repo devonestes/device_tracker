@@ -4,7 +4,9 @@ defmodule DeviceTrackerWeb.Api.MeasurementController do
   alias DeviceTracker.Devices.Device
 
   def create(conn, params) do
-    :ok = Device.add_measurement(params["device_id"], params["measurement"], params["value"])
-    json(conn, %{})
+    {:ok, resp} =
+      Device.add_measurement(params["device_id"], params["measurement"], params["value"])
+
+    json(conn, resp)
   end
 end

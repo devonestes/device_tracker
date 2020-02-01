@@ -18,6 +18,10 @@ defmodule DeviceTrackerWeb.FeatureCase do
         apply(Helpers, :device_path, [Endpoint, method | args])
       end
 
+      defp device_measurement_path(:create, name) do
+        Helpers.device_measurement_path(Endpoint, :create, name)
+      end
+
       defp request(method, url, body \\ [], headers \\ [], options \\ []) do
         headers = [{"content-type", "application/json; charset=utf-8"} | headers]
         HTTPoison.request(method, @endpoint <> url, body, headers, options)

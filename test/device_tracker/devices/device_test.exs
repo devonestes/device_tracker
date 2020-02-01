@@ -29,8 +29,13 @@ defmodule DeviceTracker.Devices.DeviceTest do
       Device.add_device(name, [measurement])
 
       assert Device.get_measurements(name, measurement) == []
-      assert Device.add_measurement(name, measurement, 1) == :ok
-      assert Device.add_measurement(name, measurement, 2) == :ok
+
+      assert Device.add_measurement(name, measurement, 1) ==
+               {:ok, %{measurement: "power_used", measurements: [1]}}
+
+      assert Device.add_measurement(name, measurement, 2) ==
+               {:ok, %{measurement: "power_used", measurements: [2, 1]}}
+
       assert Device.get_measurements(name, measurement) == [2, 1]
     end
   end

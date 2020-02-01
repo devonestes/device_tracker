@@ -41,14 +41,19 @@ defmodule DeviceTracker.Devices.Device do
     name
     |> pid_for()
     |> Agent.update(fn measurements ->
-      update_in(measurements[measurement], &[value | &1])
+      update_in(
+        measurements[:measurements][String.to_atom(measurement)][:measurements],
+        &[value | &1]
+      )
     end)
+
+    {:ok, %{measurement: measurement, measurements: get_measurements(name, measurement)}}
   end
 
   def get_measurements(name, measurement) do
     name
     |> pid_for()
-    |> Agent.get(& &1[measurement])
+    |> Agent.get(& &1[:measurements][String.to_atom(measurement)][:measurements])
   end
 
   def get(name) do
@@ -89,10 +94,18 @@ defmodule DeviceTracker.Devices.Device do
   ### CALLBACKS
 
   def start_link({measurements, name}) do
-    starting = fn -> Map.new(for key <- measurements, do: {key, []}) end
+    starting = fn ->
+      %{
+        measurements:
+          Map.new(for key <- measurements, do: {String.to_atom(key), %{measurements: []}})
+      }
+    end
+
     name = {:via, Registry, {DeviceTracker.Registry, name}}
     Agent.start_link(starting, name: name)
   end
+
+  ### PRIVATE FUNCTIONS
 
   defp pid_for(name) do
     case Registry.lookup(DeviceTracker.Registry, name) do
