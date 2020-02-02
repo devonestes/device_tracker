@@ -5,9 +5,6 @@ defmodule DeviceTrackerWeb.Features.DevicesTest do
 
   describe "GET /devices" do
     test "lists all devices", %{session: session} do
-      # Shows them in alphabetical
-      # Groups devices if they're linked together
-      # Groups with the fewest devices show up first in order
       devices = [
         {"device6", ["power_usage"]},
         {"device7", ["other_usage"]},
@@ -22,17 +19,30 @@ defmodule DeviceTrackerWeb.Features.DevicesTest do
       |> assert_has(css(".device", text: "device7"))
       |> assert_has(css(".device", text: "device8"))
     end
+
+    # test "lists devices in alphabetical order", %{session: session} do
+    # end
+
+    # test "groups devices if they're linked together in a group", %{session: session} do
+    # end
+
+    # test "groups are sorted from smallest to largest", %{session: session} do
+    # end
   end
 
   describe "GET /devices/:id" do
     test "shows information for a single device", %{session: session} do
-      # Shows only 3 measurement types even if there is a fourth added
-      # Shows data for a device that is off even though it shouldn't
       {:ok, device} = Device.add_device("device9", ["brightness"])
 
       session
       |> visit(device_path(:show, device.name))
       |> assert_has(css(".device", text: "device9"))
     end
+
+    # test "should always show all measurement types", %{session: session} do
+    # end
+
+    # test "should not show data for a device if it is marked as off", %{session: session} do
+    # end
   end
 end
