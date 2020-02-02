@@ -4,6 +4,7 @@
     <%= for {measurement, measurements} <- @device.measurements do %>
       <p><%= measurement %></p>
       <p><%= inspect(measurements.measurements) %></p>
+      <p><%= DeviceTracker.Metrics.average(measurements.measurements) %></p>
     <% end %>
   </div>
 </div>

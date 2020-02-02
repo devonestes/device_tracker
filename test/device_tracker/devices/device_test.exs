@@ -4,6 +4,7 @@ defmodule DeviceTracker.Devices.DeviceTest do
   alias DeviceTracker.Devices.Device
 
   describe "add_device/2" do
+    # FLAKY TEST - How can we improve it?
     test "allows us to register a device" do
       name = "lightbulb"
       measurement = "power_used"
@@ -26,17 +27,13 @@ defmodule DeviceTracker.Devices.DeviceTest do
     test "Allows us to add measurements" do
       name = "lightbulb2"
       measurement = "power_used"
-      Device.add_device(name, [measurement])
-
-      assert {:ok, []} = Device.get_measurements(name, measurement)
+      assert {:ok, _} = Device.add_device(name, [measurement])
 
       assert {:ok, %{measurement: "power_used", measurements: [1]}} =
                Device.add_measurement(name, measurement, 1)
 
       assert {:ok, %{measurement: "power_used", measurements: [2, 1]}} =
                Device.add_measurement(name, measurement, 2)
-
-      assert {:ok, [2, 1]} = Device.get_measurements(name, measurement)
     end
   end
 
@@ -44,37 +41,88 @@ defmodule DeviceTracker.Devices.DeviceTest do
     test "gets measurements for a given device" do
       name = "lightbulb3"
       measurement = "power_used"
-      assert {:ok, device} = Device.add_device(name, [measurement])
+      assert {:ok, _} = Device.add_device(name, [measurement])
       assert {:ok, []} = Device.get_measurements(name, measurement)
-
-      assert {:ok, %{measurement: "power_used", measurements: [456]}} =
-               Device.add_measurement(name, measurement, 456)
-
+      assert {:ok, _} = Device.add_measurement(name, measurement, 456)
       assert {:ok, [456]} = Device.get_measurements(name, measurement)
     end
   end
 
   describe "get/1" do
-    @tag :skip
     test "gets all information for the given device" do
+      name = "lightbulb4"
+      measurement = "power_used"
+      assert {:ok, _} = Device.add_device(name, [measurement])
+      assert {:ok, _} = Device.add_measurement(name, measurement, 456)
+      assert {:ok, %{}} = Device.get(name)
+    end
+
+    test "returns an error tuple if the device doesn't exist" do
+      assert {:error, :not_found} == Device.get("not_a_device")
     end
   end
 
   describe "list_all/0" do
-    @tag :skip
+    # FLAKY - how can we make it better?
     test "lists all information for all devices" do
+      devices = [
+        {"lightbulb5", ["power_usage"]},
+        {"lightbulb6", ["other_usage"]},
+        {"lightbulb7", ["third_usage"]}
+      ]
+
+      Enum.each(devices, fn {name, measurements} -> Device.add_device(name, measurements) end)
+
+      assert {:ok, [first, second, third]} = Device.list_all()
+      assert %{name: "lightbulb5"} = first
+      assert %{name: "lightbulb6"} = second
+      assert %{name: "lightbulb7"} = third
     end
   end
 
   describe "update/2" do
-    @tag :skip
     test "updates settings for the given device" do
+      name = "lightbulb8"
+      measurement = "power_used"
+      assert {:ok, _} = Device.add_device(name, [measurement])
+
+      assert {:ok,
+              %{
+                power_status: :off,
+                max_measurements: 10,
+                group_name: "Living room"
+              }} =
+               Device.update(name, %{
+                 :power_status => :off,
+                 :max_measurements => 10,
+                 "group_name" => "Living room"
+               })
     end
   end
 
   describe "delete/1" do
-    @tag :skip
     test "deletes the given device" do
+      name = "lightbulb9"
+      measurement = "power_used"
+
+      assert DynamicSupervisor.count_children(DeviceTracker.DynamicSupervisor) == %{
+               active: 0,
+               specs: 0,
+               supervisors: 0,
+               workers: 0
+             }
+
+      assert {:ok, _} = Device.add_device(name, [measurement])
+      assert Registry.count(DeviceTracker.Registry) == 1
+      assert {:ok, _} = Device.delete(name)
+      assert Registry.count(DeviceTracker.Registry) == 0
+
+      assert DynamicSupervisor.count_children(DeviceTracker.DynamicSupervisor) == %{
+               active: 0,
+               specs: 0,
+               supervisors: 0,
+               workers: 0
+             }
     end
   end
 end

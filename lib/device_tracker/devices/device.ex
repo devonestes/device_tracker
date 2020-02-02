@@ -84,7 +84,10 @@ defmodule DeviceTracker.Devices.Device do
   def update(name, settings) do
     settings =
       settings
-      |> Enum.map(fn {k, v} -> {String.to_atom(k), v} end)
+      |> Enum.map(fn
+        {k, v} when is_binary(k) -> {String.to_atom(k), v}
+        {k, v} -> {k, v}
+      end)
       |> Map.new()
 
     pid = pid_for(name)
