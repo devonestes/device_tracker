@@ -9,7 +9,7 @@ defmodule DeviceTrackerWeb.DeviceController do
   end
 
   def show(conn, params) do
-    device = Device.get(params["id"])
+    {:ok, device} = Device.get(params["id"])
     render(conn, "show.html", device: device)
   end
 end

@@ -25,10 +25,14 @@ defmodule DeviceTrackerWeb.Features.DevicesTest do
   end
 
   describe "GET /devices/:id" do
-    @tag :skip
-    test "shows information for a single device", %{session: _session} do
+    test "shows information for a single device", %{session: session} do
       # Shows only 3 measurement types even if there is a fourth added
       # Shows data for a device that is off even though it shouldn't
+      {:ok, device} = Device.add_device("device9", ["brightness"])
+
+      session
+      |> visit(device_path(:show, device.name))
+      |> assert_has(css(".device", text: "device9"))
     end
   end
 end
