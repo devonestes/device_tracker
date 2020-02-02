@@ -3,7 +3,7 @@
   <div>
     <%= for {measurement, measurements} <- @device.measurements do %>
       <p><%= measurement %></p>
-      <p><%= measurements.measurements %></p>
+      <p><%= inspect(measurements.measurements) %></p>
     <% end %>
   </div>
 </div>

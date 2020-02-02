@@ -28,21 +28,29 @@ defmodule DeviceTracker.Devices.DeviceTest do
       measurement = "power_used"
       Device.add_device(name, [measurement])
 
-      assert Device.get_measurements(name, measurement) == []
+      assert {:ok, []} = Device.get_measurements(name, measurement)
 
-      assert Device.add_measurement(name, measurement, 1) ==
-               {:ok, %{measurement: "power_used", measurements: [1]}}
+      assert {:ok, %{measurement: "power_used", measurements: [1]}} =
+               Device.add_measurement(name, measurement, 1)
 
-      assert Device.add_measurement(name, measurement, 2) ==
-               {:ok, %{measurement: "power_used", measurements: [2, 1]}}
+      assert {:ok, %{measurement: "power_used", measurements: [2, 1]}} =
+               Device.add_measurement(name, measurement, 2)
 
-      assert Device.get_measurements(name, measurement) == [2, 1]
+      assert {:ok, [2, 1]} = Device.get_measurements(name, measurement)
     end
   end
 
   describe "get_measurements/2" do
-    @tag :skip
     test "gets measurements for a given device" do
+      name = "lightbulb3"
+      measurement = "power_used"
+      assert {:ok, device} = Device.add_device(name, [measurement])
+      assert {:ok, []} = Device.get_measurements(name, measurement)
+
+      assert {:ok, %{measurement: "power_used", measurements: [456]}} =
+               Device.add_measurement(name, measurement, 456)
+
+      assert {:ok, [456]} = Device.get_measurements(name, measurement)
     end
   end
 

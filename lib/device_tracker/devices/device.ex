@@ -47,13 +47,17 @@ defmodule DeviceTracker.Devices.Device do
       )
     end)
 
-    {:ok, %{measurement: measurement, measurements: get_measurements(name, measurement)}}
+    {:ok, measurements} = get_measurements(name, measurement)
+    {:ok, %{measurement: measurement, measurements: measurements}}
   end
 
   def get_measurements(name, measurement) do
+    measurements =
     name
     |> pid_for()
     |> Agent.get(& &1[:measurements][String.to_atom(measurement)][:measurements])
+
+    {:ok, measurements}
   end
 
   def get(name) do
