@@ -1,5 +1,5 @@
 defmodule DeviceTracker.Devices.DeviceTest do
-  use ExUnit.Case, async: true
+  use Assertions.Case, async: true
 
   alias DeviceTracker.Devices.Device
 
@@ -12,14 +12,7 @@ defmodule DeviceTracker.Devices.DeviceTest do
       assert {:ok, %{measurements: ["power_used"], name: "lightbulb"}} =
                Device.add_device(name, [measurement])
 
-      assert Registry.count(DeviceTracker.Registry) == 1
-
-      assert DynamicSupervisor.count_children(DeviceTracker.DynamicSupervisor) == %{
-               active: 1,
-               specs: 1,
-               supervisors: 0,
-               workers: 1
-             }
+      assert Registry.count(DeviceTracker.Registry) >= 1
     end
   end
 
@@ -63,7 +56,6 @@ defmodule DeviceTracker.Devices.DeviceTest do
   end
 
   describe "list_all/0" do
-    # FLAKY - how can we make it better?
     test "lists all information for all devices" do
       devices = [
         {"lightbulb5", ["power_usage"]},
@@ -73,10 +65,10 @@ defmodule DeviceTracker.Devices.DeviceTest do
 
       Enum.each(devices, fn {name, measurements} -> Device.add_device(name, measurements) end)
 
-      assert {:ok, [first, second, third]} = Device.list_all()
-      assert %{name: "lightbulb5"} = first
-      assert %{name: "lightbulb6"} = second
-      assert %{name: "lightbulb7"} = third
+      assert {:ok, all_devices} = Device.list_all()
+      Enum.each(devices, fn {name, _} ->
+        assert_map_in_list(%{name: name}, all_devices, [:name])
+      end)
     end
   end
 
@@ -105,24 +97,10 @@ defmodule DeviceTracker.Devices.DeviceTest do
       name = "lightbulb9"
       measurement = "power_used"
 
-      assert DynamicSupervisor.count_children(DeviceTracker.DynamicSupervisor) == %{
-               active: 0,
-               specs: 0,
-               supervisors: 0,
-               workers: 0
-             }
-
       assert {:ok, _} = Device.add_device(name, [measurement])
-      assert Registry.count(DeviceTracker.Registry) == 1
+      assert {:ok, %{}} = Device.get(name)
       assert {:ok, _} = Device.delete(name)
-      assert Registry.count(DeviceTracker.Registry) == 0
-
-      assert DynamicSupervisor.count_children(DeviceTracker.DynamicSupervisor) == %{
-               active: 0,
-               specs: 0,
-               supervisors: 0,
-               workers: 0
-             }
+      assert {:error, :not_found} = Device.get(name)
     end
   end
 end

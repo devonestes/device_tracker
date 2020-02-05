@@ -105,6 +105,7 @@ defmodule DeviceTracker.Devices.Device do
     pid = pid_for(name)
     device = get(name)
     :ok = DynamicSupervisor.terminate_child(DeviceTracker.DynamicSupervisor, pid)
+    :ok = Registry.unregister(DeviceTracker.Registry, name)
     device
   end
 

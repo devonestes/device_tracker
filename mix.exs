@@ -40,6 +40,7 @@ defmodule DeviceTracker.MixProject do
       {:jason, "~> 1.0"},
       {:plug_cowboy, "~> 2.0"},
       {:wallaby, "~> 0.23"},
+      {:assertions, "~> 0.15"},
       {:propcheck, "~> 1.0"}
     ]
   end
