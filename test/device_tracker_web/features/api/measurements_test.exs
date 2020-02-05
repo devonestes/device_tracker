@@ -14,6 +14,7 @@ defmodule DeviceTrackerWeb.Features.Api.MeasurementsTest do
       path = device_measurement_path(:create, name)
       assert {:ok, %{status_code: 200, body: body}} = request(:post, path, Jason.encode!(params))
       assert {:ok, %{measurement: "power_usage", measurements: [123]}} = Jason.decode(body, keys: :atoms)
+
       assert {:ok, %{measurements: %{power_usage: %{measurements: [123]}}}} = Device.get(name)
     end
   end
