@@ -41,10 +41,11 @@ defmodule DeviceTrackerWeb.Features.DevicesTest do
       assert_text(session, css(".device:nth-of-type(5)"), "device9")
     end
 
+    @tag :skip
     test "groups devices if they're linked together in a group", %{session: session} do
       devices = [
-        {"device5", "living_room"},
-        {"device6", "kitchen"},
+        {"device5", "kitchen"},
+        {"device6", "living_room"},
         {"device7", "living_room"},
         {"device8", "kitchen"},
         {"device9", "living_room"}
@@ -53,10 +54,37 @@ defmodule DeviceTrackerWeb.Features.DevicesTest do
       Enum.each(devices, fn {name, group_name} ->
         Device.update(name, %{"group_name" => group_name})
       end)
+
+      session = visit(session, device_path(:index))
+
+      assert_text(session, css(".device:nth-of-type(1)"), "device5")
+      assert_text(session, css(".device:nth-of-type(2)"), "device8")
+      assert_text(session, css(".device:nth-of-type(3)"), "device6")
+      assert_text(session, css(".device:nth-of-type(4)"), "device7")
+      assert_text(session, css(".device:nth-of-type(5)"), "device9")
     end
 
-    # test "groups are sorted from smallest to largest", %{session: session} do
-    # end
+    test "groups are sorted from smallest to largest", %{session: session} do
+      devices = [
+        {"device5", "kitchen"},
+        {"device6", "living_room"},
+        {"device7", "living_room"},
+        {"device8", "kitchen"},
+        {"device9", "living_room"}
+      ]
+
+      Enum.each(devices, fn {name, group_name} ->
+        Device.update(name, %{"group_name" => group_name})
+      end)
+
+      session = visit(session, device_path(:index))
+
+      assert_text(session, css(".device:nth-of-type(1)"), "device6")
+      assert_text(session, css(".device:nth-of-type(2)"), "device7")
+      assert_text(session, css(".device:nth-of-type(3)"), "device9")
+      assert_text(session, css(".device:nth-of-type(4)"), "device5")
+      assert_text(session, css(".device:nth-of-type(5)"), "device8")
+    end
   end
 
   describe "GET /devices/:id" do

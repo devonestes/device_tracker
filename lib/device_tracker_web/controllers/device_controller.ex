@@ -13,7 +13,9 @@ defmodule DeviceTrackerWeb.DeviceController do
           measurements == []
         end)
       end)
-      |> Enum.sort_by(& &1.name)
+      |> Enum.group_by(&Map.get(&1, :group_name))
+      |> Enum.sort_by(&length(elem(&1, 1)), :desc)
+      |> Enum.flat_map(fn {_, chunk} -> Enum.sort_by(chunk, & &1.name) end)
 
     render(conn, "index.html", devices: devices)
   end
