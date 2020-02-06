@@ -109,6 +109,12 @@ defmodule DeviceTracker.Devices.Device do
     device
   end
 
+  def clear() do
+    {:ok, devices} = list_all()
+    Enum.map(devices, &delete(&1.name))
+    :ok
+  end
+
   ### CALLBACKS
 
   def start_link({measurements, name}) do

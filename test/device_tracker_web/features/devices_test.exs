@@ -1,9 +1,11 @@
 defmodule DeviceTrackerWeb.Features.DevicesTest do
-  use DeviceTrackerWeb.FeatureCase, async: true
+  use DeviceTrackerWeb.FeatureCase
 
   alias DeviceTracker.Devices.Device
 
   setup_all do
+    Device.clear()
+
     devices = [
       {"device6", "power_usage"},
       {"device7", "other_usage"},
@@ -26,12 +28,11 @@ defmodule DeviceTrackerWeb.Features.DevicesTest do
     end
 
     test "lists devices in alphabetical order", %{session: session} do
-      session
-      |> visit(device_path(:index))
-      |> take_screenshot()
-      |> assert_text(css(".device:nth-of-type(1)"), "device6")
-      |> assert_text(css(".device:nth-of_type(2)"), "device7")
-      |> assert_text(css(".device:nth-of_type(3)"), "device8")
+      session = visit(session, device_path(:index))
+
+      assert_text(session, css(".device:nth-of-type(1)"), "device6")
+      assert_text(session, css(".device:nth-of-type(2)"), "device7")
+      assert_text(session, css(".device:nth-of-type(3)"), "device8")
     end
 
     # test "groups devices if they're linked together in a group", %{session: session} do
