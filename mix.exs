@@ -41,7 +41,9 @@ defmodule DeviceTracker.MixProject do
       {:plug_cowboy, "~> 2.0"},
       {:wallaby, "~> 0.23"},
       {:assertions, "~> 0.15"},
-      {:propcheck, "~> 1.0"}
+      {:propcheck, "~> 1.0"},
+      {:ex_aws_s3, ">= 2.0.0"},
+      {:mox, ">= 0.0.0"}
     ]
   end
 end

@@ -22,6 +22,11 @@ config :logger, :console,
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
 
+config :ex_aws,
+  access_key_id: "access_key_id",
+  secret_access_key: "secret_access_key",
+  http_client: DeviceTracker.ExAws.FakeHttp
+
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{Mix.env()}.exs"

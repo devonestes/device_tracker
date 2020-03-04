@@ -25,7 +25,22 @@ defmodule DeviceTracker.Devices.Device do
 
   use Agent
 
+  alias DeviceTracker.S3
+
   ### API
+
+  def start_link({measurements, name}) do
+    starting = fn ->
+      %{
+        name: name,
+        measurements:
+          Map.new(for key <- measurements, do: {String.to_atom(key), %{measurements: []}})
+      }
+    end
+
+    name = {:via, Registry, {DeviceTracker.Registry, name}}
+    Agent.start_link(starting, name: name)
+  end
 
   def add_device(name, measurements) do
     {:ok, _} =
@@ -34,6 +49,7 @@ defmodule DeviceTracker.Devices.Device do
         {__MODULE__, {measurements, name}}
       )
 
+    S3.put_bucket(name)
     {:ok, %{name: name, measurements: measurements}}
   end
 
@@ -41,10 +57,14 @@ defmodule DeviceTracker.Devices.Device do
     name
     |> pid_for()
     |> Agent.update(fn measurements ->
-      update_in(
-        measurements[:measurements][String.to_atom(measurement)][:measurements],
-        &[value | &1]
-      )
+      measurements =
+        update_in(
+          measurements[:measurements][String.to_atom(measurement)][:measurements],
+          &[value | &1]
+        )
+
+      S3.put_object(name, "measurements", :erlang.term_to_binary(measurements))
+      measurements
     end)
 
     {:ok, measurements} = get_measurements(name, measurement)
@@ -53,9 +73,9 @@ defmodule DeviceTracker.Devices.Device do
 
   def get_measurements(name, measurement) do
     measurements =
-    name
-    |> pid_for()
-    |> Agent.get(& &1[:measurements][String.to_atom(measurement)][:measurements])
+      name
+      |> pid_for()
+      |> Agent.get(& &1[:measurements][String.to_atom(measurement)][:measurements])
 
     {:ok, measurements}
   end
@@ -113,21 +133,6 @@ defmodule DeviceTracker.Devices.Device do
     {:ok, devices} = list_all()
     Enum.map(devices, &delete(&1.name))
     :ok
-  end
-
-  ### CALLBACKS
-
-  def start_link({measurements, name}) do
-    starting = fn ->
-      %{
-        name: name,
-        measurements:
-          Map.new(for key <- measurements, do: {String.to_atom(key), %{measurements: []}})
-      }
-    end
-
-    name = {:via, Registry, {DeviceTracker.Registry, name}}
-    Agent.start_link(starting, name: name)
   end
 
   ### PRIVATE FUNCTIONS

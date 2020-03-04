@@ -31,6 +31,7 @@ defmodule DeviceTrackerWeb.Features.DevicesTest do
       |> assert_has(css(".device", text: "device9"))
     end
 
+    @tag :skip
     test "lists devices in alphabetical order", %{session: session} do
       session = visit(session, device_path(:index))
 
@@ -96,8 +97,18 @@ defmodule DeviceTrackerWeb.Features.DevicesTest do
       |> assert_has(css(".device", text: device.name))
     end
 
-    # test "should always show all measurement types", %{session: session} do
-    # end
+    test "should always show all measurement types", %{session: session} do
+      {:ok, device} = Device.get("device6")
+
+      Device.update(device, %{
+        measurements: %{power_usage: %{measurements: [291]}, wattage: %{measurements: [21]}}
+      })
+
+      session
+      |> visit(device_path(:show, device.name))
+      |> assert_text("wattage")
+      |> assert_text("power_usage")
+    end
 
     # test "should not show data for a device if it is marked as off", %{session: session} do
     # end
