@@ -102,23 +102,28 @@ defmodule DeviceTracker.Devices.Device do
   end
 
   def update(name, settings) do
-    settings =
-      settings
-      |> Enum.map(fn
-        {k, v} when is_binary(k) -> {String.to_atom(k), v}
-        {k, v} -> {k, v}
-      end)
-      |> Map.new()
+    case pid_for(name) do
+      nil ->
+        {:error, :device_not_found}
 
-    pid = pid_for(name)
+      pid ->
+        settings =
+          settings
+          |> Enum.map(fn
+            {k, v} when is_binary(k) -> {String.to_atom(k), v}
+            {k, v} -> {k, v}
+          end)
+          |> Map.new()
 
-    device =
-      Agent.get_and_update(pid, fn state ->
-        new_state = Map.merge(settings, state)
-        {new_state, new_state}
-      end)
 
-    {:ok, device}
+        device =
+          Agent.get_and_update(pid, fn state ->
+            new_state = Map.merge(state, settings)
+            {new_state, new_state}
+          end)
+
+        {:ok, device}
+    end
   end
 
   def delete(name) do
@@ -139,7 +144,7 @@ defmodule DeviceTracker.Devices.Device do
 
   defp pid_for(name) do
     case Registry.lookup(DeviceTracker.Registry, name) do
-      [{pid, _}] -> pid
+      [{pid, _} | _] -> pid
       _ -> nil
     end
   end

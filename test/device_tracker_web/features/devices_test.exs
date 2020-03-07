@@ -100,13 +100,16 @@ defmodule DeviceTrackerWeb.Features.DevicesTest do
     test "should always show all measurement types", %{session: session} do
       {:ok, device} = Device.get("device6")
 
-      Device.update(device, %{
+      Device.update("device6", %{
         measurements: %{power_usage: %{measurements: [291]}, wattage: %{measurements: [21]}}
       })
 
       session
       |> visit(device_path(:show, device.name))
       |> assert_text("wattage")
+
+      session
+      |> visit(device_path(:show, device.name))
       |> assert_text("power_usage")
     end
 
