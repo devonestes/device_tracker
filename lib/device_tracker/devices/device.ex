@@ -43,18 +43,18 @@ defmodule DeviceTracker.Devices.Device do
     Agent.start_link(starting, name: name)
   end
 
-  def add_device(name, measurements) do
+  def add_device(name, measurements, s3_interface \\ S3) do
     {:ok, _} =
       DynamicSupervisor.start_child(
         DeviceTracker.DynamicSupervisor,
         {__MODULE__, {measurements, name}}
       )
 
-    S3.put_bucket(name)
+    s3_interface.put_bucket(name)
     {:ok, %{name: name, measurements: measurements}}
   end
 
-  def add_measurement(name, measurement, value) do
+  def add_measurement(name, measurement, value, s3_interface \\ S3) do
     name
     |> pid_for()
     |> Agent.update(fn measurements ->
@@ -64,7 +64,7 @@ defmodule DeviceTracker.Devices.Device do
           &[value | &1]
         )
 
-      S3.put_object(name, "measurements", :erlang.term_to_binary(measurements))
+      s3_interface.put_object(name, "measurements", :erlang.term_to_binary(measurements))
       measurements
     end)
 

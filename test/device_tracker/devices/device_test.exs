@@ -3,8 +3,19 @@ defmodule DeviceTracker.Devices.DeviceTest do
 
   alias DeviceTracker.Devices.Device
 
+  defmodule S3 do
+    def put_bucket(name) do
+      me = self()
+      send(me, {:put_bucket, name})
+    end
+
+    def put_object(bucket, key, object) do
+      pid = Application.get_env(:device_tracker, :current_test_pid)
+      send(pid, {:put_object, bucket, key, object})
+    end
+  end
+
   describe "add_device/2" do
-    # FLAKY TEST - How can we improve it?
     test "allows us to register a device" do
       name = "lightbulb"
       measurement = "power_used"
@@ -14,10 +25,17 @@ defmodule DeviceTracker.Devices.DeviceTest do
 
       assert Registry.count(DeviceTracker.Registry) >= 1
     end
+
+    test "creates an S3 bucket" do
+      name = "lightbulb_again"
+      measurement = "power_used"
+      Device.add_device(name, [measurement], S3)
+      assert_received({:put_bucket, ^name})
+    end
   end
 
   describe "add_measurement/3" do
-    test "Allows us to add measurements" do
+    test "allows us to add measurements" do
       name = "lightbulb2"
       measurement = "power_used"
       assert {:ok, _} = Device.add_device(name, [measurement])
@@ -27,6 +45,23 @@ defmodule DeviceTracker.Devices.DeviceTest do
 
       assert {:ok, %{measurement: "power_used", measurements: [2, 1]}} =
                Device.add_measurement(name, measurement, 2)
+    end
+
+    test "uploads results to S3" do
+      Application.put_env(:device_tracker, :current_test_pid, self())
+      name = "lightbulb2_again"
+      measurement = "power_used"
+      Device.add_device(name, [measurement])
+      Device.add_measurement(name, measurement, 1, S3)
+
+      expected_state = %{
+        measurements: %{power_used: %{measurements: [1]}},
+        name: "lightbulb2_again",
+        power_status: :on
+      }
+
+      expected_binary = :erlang.term_to_binary(expected_state)
+      assert_received({:put_object, ^name, "measurements", ^expected_binary})
     end
   end
 
@@ -66,6 +101,7 @@ defmodule DeviceTracker.Devices.DeviceTest do
       Enum.each(devices, fn {name, measurements} -> Device.add_device(name, measurements) end)
 
       assert {:ok, all_devices} = Device.list_all()
+
       Enum.each(devices, fn {name, _} ->
         assert_map_in_list(%{name: name}, all_devices, [:name])
       end)
