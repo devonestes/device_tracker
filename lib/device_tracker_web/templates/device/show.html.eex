@@ -1,8 +1,10 @@
 <h1 class="device"><%= @device.name %></h1>
 <div>
-  <%= for {measurement, measurements} <- @device.measurements do %>
-    <p>Name: <%= measurement %></p>
-    <p>Measurements: <%= inspect(measurements.measurements) %></p>
-    <p>Average: <%= DeviceTracker.Metrics.average(measurements.measurements) %></p>
+  <%= if @device.power_status == :on do %>
+    <%= for {measurement, measurements} <- Map.get(@device, :measurements, []) do %>
+      <p>Name: <%= measurement %></p>
+      <p class="measurements">Measurements: <%= inspect(measurements.measurements) %></p>
+      <p>Average: <%= DeviceTracker.Metrics.average(measurements.measurements) %></p>
+    <% end %>
   <% end %>
 </div>

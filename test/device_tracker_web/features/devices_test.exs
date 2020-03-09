@@ -111,9 +111,20 @@ defmodule DeviceTrackerWeb.Features.DevicesTest do
       session
       |> visit(device_path(:show, device.name))
       |> assert_text("power_usage")
+
+      Device.update("device6", device)
     end
 
-    # test "should not show data for a device if it is marked as off", %{session: session} do
-    # end
+    test "should not show data for a device if it is marked as off", %{session: session} do
+      {:ok, device} = Device.get("device6")
+
+      Device.update("device6", %{power_status: :off})
+
+      session
+      |> visit(device_path(:show, device.name))
+      |> refute_has(css(".measurements"))
+
+      Device.update("device6", device)
+    end
   end
 end

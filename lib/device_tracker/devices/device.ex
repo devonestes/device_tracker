@@ -33,6 +33,7 @@ defmodule DeviceTracker.Devices.Device do
     starting = fn ->
       %{
         name: name,
+        power_status: :on,
         measurements:
           Map.new(for key <- measurements, do: {String.to_atom(key), %{measurements: []}})
       }
