@@ -13,6 +13,32 @@ defmodule Sketchql.Aws.S3Test do
     end
   end
 
+  describe "put_object/4" do
+    test "makes the right calls to AWS" do
+      Mox.expect(HttpMock, :request, &put_object/5)
+      assert :ok == S3.put_object("test_bucket", "fake.object", "body", [], http_client: HttpMock)
+      Mox.verify!(HttpMock)
+    end
+  end
+
+  defp put_object(method, url, body, headers, options) do
+    assert method == :put
+    assert url == "https://s3.amazonaws.com/test_bucket/fake.object"
+
+    assert body == "body"
+
+    assert [
+             {"Authorization", _},
+             {"host", "s3.amazonaws.com"},
+             {"x-amz-date", _},
+             {"content-length", 4},
+             {"x-amz-content-sha256", _}
+           ] = headers
+
+    assert options == []
+    {:ok, %{status_code: 200, body: ""}}
+  end
+
   defp put_bucket(method, url, body, headers, options) do
     assert method == :put
     assert url == "https://s3.amazonaws.com/test_bucket/"

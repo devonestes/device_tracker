@@ -27,9 +27,17 @@ defmodule DeviceTracker.S3 do
     end
   end
 
-  def put_object(bucket, object, body, options \\ []) do
+  def put_object(bucket, object, body) do
+    put_object(bucket, object, body, [], [])
+  end
+
+  def put_object(bucket, object, body, operation_options, request_options) do
     bucket
-    |> S3.put_object(object, body, options)
-    |> ExAws.request()
+    |> S3.put_object(object, body, operation_options)
+    |> ExAws.request(request_options)
+    |> case do
+      {:ok, %{status_code: 200}} -> :ok
+      response -> {:error, response}
+    end
   end
 end
