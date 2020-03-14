@@ -27,9 +27,11 @@ defmodule DeviceTracker.Devices.Device do
 
   alias DeviceTracker.S3
 
+  alias DeviceTracker.Registry, as: DTR
+
   ### API
 
-  def start_link({measurements, name}) do
+  def start_link({measurements, name, registry}) do
     starting = fn ->
       %{
         name: name,
@@ -39,24 +41,24 @@ defmodule DeviceTracker.Devices.Device do
       }
     end
 
-    name = {:via, Registry, {DeviceTracker.Registry, name}}
+    name = {:via, Registry, {registry, name}}
     Agent.start_link(starting, name: name)
   end
 
-  def add_device(name, measurements, s3_interface \\ S3) do
+  def add_device(name, measurements, s3_interface \\ S3, registry \\ DTR) do
     {:ok, _} =
       DynamicSupervisor.start_child(
         DeviceTracker.DynamicSupervisor,
-        {__MODULE__, {measurements, name}}
+        {__MODULE__, {measurements, name, registry}}
       )
 
     s3_interface.put_bucket(name)
     {:ok, %{name: name, measurements: measurements}}
   end
 
-  def add_measurement(name, measurement, value, s3_interface \\ S3) do
+  def add_measurement(name, measurement, value, s3_interface \\ S3, registry \\ DTR) do
     name
-    |> pid_for()
+    |> pid_for(registry)
     |> Agent.update(fn measurements ->
       measurements =
         update_in(
@@ -68,32 +70,32 @@ defmodule DeviceTracker.Devices.Device do
       measurements
     end)
 
-    {:ok, measurements} = get_measurements(name, measurement)
+    {:ok, measurements} = get_measurements(name, measurement, registry)
     {:ok, %{measurement: measurement, measurements: measurements}}
   end
 
-  def get_measurements(name, measurement) do
+  def get_measurements(name, measurement, registry \\ DTR) do
     measurements =
       name
-      |> pid_for()
+      |> pid_for(registry)
       |> Agent.get(& &1[:measurements][String.to_atom(measurement)][:measurements])
 
     {:ok, measurements}
   end
 
-  def get(name) do
-    case pid_for(name) do
+  def get(name, registry \\ DTR) do
+    case pid_for(name, registry) do
       nil -> {:error, :not_found}
       pid -> {:ok, Agent.get(pid, & &1)}
     end
   end
 
-  def list_all() do
+  def list_all(registry \\ DTR) do
     devices =
-      DeviceTracker.Registry
+      registry
       |> Registry.select([{{:"$1", :_, :_}, [], [:"$1"]}])
       |> Enum.flat_map(fn name ->
-        case get(name) do
+        case get(name, registry) do
           {:ok, device} -> [device]
           _ -> []
         end
@@ -102,8 +104,8 @@ defmodule DeviceTracker.Devices.Device do
     {:ok, devices}
   end
 
-  def update(name, settings) do
-    case pid_for(name) do
+  def update(name, settings, registry \\ DTR) do
+    case pid_for(name, registry) do
       nil ->
         {:error, :device_not_found}
 
@@ -127,24 +129,24 @@ defmodule DeviceTracker.Devices.Device do
     end
   end
 
-  def delete(name) do
-    pid = pid_for(name)
-    device = get(name)
+  def delete(name, registry \\ DTR) do
+    pid = pid_for(name, registry)
+    device = get(name, registry)
     :ok = DynamicSupervisor.terminate_child(DeviceTracker.DynamicSupervisor, pid)
-    :ok = Registry.unregister(DeviceTracker.Registry, name)
+    :ok = Registry.unregister(registry, name)
     device
   end
 
-  def clear() do
-    {:ok, devices} = list_all()
-    Enum.map(devices, &delete(&1.name))
+  def clear(registry \\ DTR) do
+    {:ok, devices} = list_all(registry)
+    Enum.map(devices, &delete(&1.name, registry))
     :ok
   end
 
   ### PRIVATE FUNCTIONS
 
-  defp pid_for(name) do
-    case Registry.lookup(DeviceTracker.Registry, name) do
+  defp pid_for(name, registry) do
+    case Registry.lookup(registry, name) do
       [{pid, _} | _] -> pid
       _ -> nil
     end
