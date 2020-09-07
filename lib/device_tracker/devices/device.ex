@@ -46,14 +46,20 @@ defmodule DeviceTracker.Devices.Device do
   end
 
   def add_device(name, measurements, s3_interface \\ S3, registry \\ DTR) do
-    {:ok, _} =
+    response =
       DynamicSupervisor.start_child(
         DeviceTracker.DynamicSupervisor,
         {__MODULE__, {measurements, name, registry}}
       )
 
-    s3_interface.put_bucket(name)
-    {:ok, %{name: name, measurements: measurements}}
+    case response do
+      {:ok, _} ->
+        s3_interface.put_bucket(name)
+        {:ok, %{name: name, measurements: measurements}}
+
+      error ->
+        error
+    end
   end
 
   def add_measurement(name, measurement, value, s3_interface \\ S3, registry \\ DTR) do

@@ -38,7 +38,7 @@ defmodule DeviceTracker.DevicesPropertyTest do
   def command_gen([]) do
     frequency([
       {1, {:list_all, []}},
-      {3, {:add_device, [utf8(), list(utf8(100))]}}
+      {3, {:add_device, [utf8(), list(utf8())]}}
     ])
   end
 
@@ -64,21 +64,28 @@ defmodule DeviceTracker.DevicesPropertyTest do
 
   defcommand :add_device do
     def impl(name, measurements), do: Device.add_device(name, measurements, S3)
-    def next(names, [name, _], _), do: [name | names]
 
-    def post(_, [name, _], _) do
+    def post(_, [name, _], {:ok, _}) do
       {:ok, devices} = Device.list_all()
       name in Enum.map(devices, & &1.name)
     end
+
+    def post(_, _, _) do
+      true
+    end
+
+    def next(names, [name, _], {:ok, _}), do: [name | names]
+    def next(names, _, _), do: names
   end
 
   defcommand :delete do
     def impl(name), do: Device.delete(name)
-    def next(names, [name], _), do: List.delete(names, name)
 
     def post(_, [name], _) do
       {:ok, devices} = Device.list_all()
       name not in Enum.map(devices, & &1.name)
     end
+
+    def next(names, [name], _), do: List.delete(names, name)
   end
 end
