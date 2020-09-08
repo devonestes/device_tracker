@@ -41,7 +41,7 @@ defmodule DeviceTracker.MixProject do
       {:plug_cowboy, "~> 2.0"},
       {:wallaby, "~> 0.23"},
       {:assertions, "~> 0.15"},
-      {:propcheck, github: "devonestes/propcheck", branch: "fix-reporter-bug"},
+      {:propcheck, github: "alfert/propcheck", branch: "master"},
       {:ex_aws_s3, ">= 2.0.0"},
       {:mox, ">= 0.0.0"}
     ]

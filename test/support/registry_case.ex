@@ -9,6 +9,7 @@ defmodule DeviceTracker.RegistryCase do
 
   setup _tags do
     Application.put_env(:device_tracker, :current_test_pid, self())
+
     random_string =
       :crypto.strong_rand_bytes(64) |> Base.url_encode64() |> binary_part(0, 64)
 
