@@ -3,28 +3,15 @@ defmodule DeviceTracker.Devices.DeviceTest do
 
   alias DeviceTracker.Devices.Device
 
-  defmodule S3 do
-    def put_bucket(name) do
-      me = Application.get_env(:device_tracker, :current_test_pid)
-      send(me, {:put_bucket, name})
-    end
-
-    def put_object(bucket, key, object) do
-      pid = Application.get_env(:device_tracker, :current_test_pid)
-      send(pid, {:put_object, bucket, key, object})
-    end
-  end
-
   describe "add_device/2" do
     test "allows us to register a device", %{registry: registry} do
       name = random_string()
       measurement = random_string()
 
       assert {:ok, %{measurements: [^measurement], name: ^name}} =
-               Device.add_device(name, [measurement], S3, registry)
+               Device.add_device(name, [measurement], registry)
 
       assert Registry.count(registry) == 1
-      assert_received({:put_bucket, ^name})
     end
   end
 
@@ -32,29 +19,13 @@ defmodule DeviceTracker.Devices.DeviceTest do
     test "allows us to add measurements", %{registry: registry} do
       name = random_string()
       measurement = random_string()
-      assert {:ok, _} = Device.add_device(name, [measurement], S3, registry)
+      assert {:ok, _} = Device.add_device(name, [measurement], registry)
 
       assert {:ok, %{measurement: ^measurement, measurements: [1]}} =
-               Device.add_measurement(name, measurement, 1, S3, registry)
+               Device.add_measurement(name, measurement, 1, registry)
 
       assert {:ok, %{measurement: ^measurement, measurements: [2, 1]}} =
-               Device.add_measurement(name, measurement, 2, S3, registry)
-    end
-
-    test "uploads results to S3", %{registry: registry} do
-      name = random_string()
-      measurement = random_string()
-      Device.add_device(name, [measurement], S3, registry)
-      Device.add_measurement(name, measurement, 1, S3, registry)
-
-      expected_state = %{
-        measurements: %{String.to_atom(measurement) => %{measurements: [1]}},
-        name: name,
-        power_status: :on
-      }
-
-      expected_binary = :erlang.term_to_binary(expected_state)
-      assert_received({:put_object, ^name, "measurements", ^expected_binary})
+               Device.add_measurement(name, measurement, 2, registry)
     end
   end
 
@@ -62,9 +33,9 @@ defmodule DeviceTracker.Devices.DeviceTest do
     test "gets measurements for a given device", %{registry: registry} do
       name = random_string()
       measurement = random_string()
-      assert {:ok, _} = Device.add_device(name, [measurement], S3, registry)
+      assert {:ok, _} = Device.add_device(name, [measurement], registry)
       assert {:ok, []} = Device.get_measurements(name, measurement, registry)
-      assert {:ok, _} = Device.add_measurement(name, measurement, 456, S3, registry)
+      assert {:ok, _} = Device.add_measurement(name, measurement, 456, registry)
       assert {:ok, [456]} = Device.get_measurements(name, measurement, registry)
     end
   end
@@ -73,8 +44,8 @@ defmodule DeviceTracker.Devices.DeviceTest do
     test "gets all information for the given device", %{registry: registry} do
       name = random_string()
       measurement = random_string()
-      assert {:ok, _} = Device.add_device(name, [measurement], S3, registry)
-      assert {:ok, _} = Device.add_measurement(name, measurement, 456, S3, registry)
+      assert {:ok, _} = Device.add_device(name, [measurement], registry)
+      assert {:ok, _} = Device.add_measurement(name, measurement, 456, registry)
 
       measurement = String.to_atom(measurement)
 
@@ -96,7 +67,7 @@ defmodule DeviceTracker.Devices.DeviceTest do
       devices = Enum.map(0..2, fn _ -> {random_string(), [random_string()]} end)
 
       Enum.each(devices, fn {name, measurements} ->
-        Device.add_device(name, measurements, S3, registry)
+        Device.add_device(name, measurements, registry)
       end)
 
       assert {:ok, all_devices} = Device.list_all(registry)
@@ -117,7 +88,7 @@ defmodule DeviceTracker.Devices.DeviceTest do
     test "updates settings for the given device", %{registry: registry} do
       name = random_string()
       measurement = random_string()
-      assert {:ok, _} = Device.add_device(name, [measurement], S3, registry)
+      assert {:ok, _} = Device.add_device(name, [measurement], registry)
 
       assert {:ok,
               %{
@@ -142,7 +113,7 @@ defmodule DeviceTracker.Devices.DeviceTest do
       name = random_string()
       measurement = random_string()
 
-      assert {:ok, _} = Device.add_device(name, [measurement], S3, registry)
+      assert {:ok, _} = Device.add_device(name, [measurement], registry)
       assert {:ok, _} = Device.delete(name, registry)
       assert {:error, :not_found} = Device.get(name, registry)
     end

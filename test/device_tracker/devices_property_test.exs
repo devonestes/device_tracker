@@ -16,6 +16,7 @@ defmodule DeviceTracker.DevicesPropertyTest do
     end
   end
 
+  @tag :skip
   property "does not raise any exceptions", numtests: 100, constraint_tries: 100 do
     forall commands <- commands(__MODULE__) do
       {_, _, run_result} = results = run_commands(__MODULE__, commands)
@@ -53,7 +54,7 @@ defmodule DeviceTracker.DevicesPropertyTest do
 
   defcommand :add_device do
     def impl(name, measurements) do
-      Device.add_device(name, measurements, S3)
+      Device.add_device(name, measurements)
     end
 
     def post(_, [name, _], {:ok, _}) do

@@ -45,7 +45,7 @@ defmodule DeviceTracker.Devices.Device do
     Agent.start_link(starting, name: name)
   end
 
-  def add_device(name, measurements, s3_interface \\ S3, registry \\ DTR) do
+  def add_device(name, measurements, registry \\ DTR) do
     response =
       DynamicSupervisor.start_child(
         DeviceTracker.DynamicSupervisor,
@@ -54,7 +54,7 @@ defmodule DeviceTracker.Devices.Device do
 
     case response do
       {:ok, _} ->
-        s3_interface.put_bucket(name)
+        S3.put_bucket(name)
         {:ok, %{name: name, measurements: measurements}}
 
       error ->
@@ -62,7 +62,7 @@ defmodule DeviceTracker.Devices.Device do
     end
   end
 
-  def add_measurement(name, measurement, value, s3_interface \\ S3, registry \\ DTR) do
+  def add_measurement(name, measurement, value, registry \\ DTR) do
     name
     |> pid_for(registry)
     |> Agent.update(fn measurements ->
@@ -72,7 +72,7 @@ defmodule DeviceTracker.Devices.Device do
           &[value | &1]
         )
 
-      s3_interface.put_object(name, "measurements", :erlang.term_to_binary(measurements))
+      S3.put_object(name, "measurements", :erlang.term_to_binary(measurements))
       measurements
     end)
 
