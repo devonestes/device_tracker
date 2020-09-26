@@ -1,7 +1,8 @@
 defmodule DeviceTracker.DevicesPropertyTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case
   use PropCheck
   use PropCheck.StateM.ModelDSL
+  import Assertions
 
   alias DeviceTracker.Devices.Device
 
@@ -17,7 +18,6 @@ defmodule DeviceTracker.DevicesPropertyTest do
 
   property "does not raise any exceptions", numtests: 100, constraint_tries: 100 do
     forall commands <- commands(__MODULE__) do
-      Process.put(:registry, start_registry())
       {_, _, run_result} = results = run_commands(__MODULE__, commands)
 
       (run_result == :ok)
@@ -26,83 +26,46 @@ defmodule DeviceTracker.DevicesPropertyTest do
     end
   end
 
-  defp start_registry() do
-    registry =
-      :crypto.strong_rand_bytes(64)
-      |> Base.url_encode64()
-      |> binary_part(0, 64)
-      |> String.to_atom()
-
-    DynamicSupervisor.start_child(
-      DeviceTracker.DynamicSupervisor,
-      {Registry, keys: :unique, name: registry}
-    )
-
-    registry
-  end
-
   #########################################################################
   ### Callbacks for the state machine
   #########################################################################
 
   @impl true
   def initial_state() do
+    Device.clear()
     []
   end
 
-  def command_gen([]) do
+  def command_gen(_model) do
     frequency([
       {1, {:list_all, []}},
       {3, {:add_device, [utf8(), list(utf8())]}}
     ])
   end
 
-  def command_gen(names) do
-    name_gen = such_that(name <- utf8(), when: name not in names)
-    measurements_gen = list(utf8())
-
-    frequency([
-      {1, {:list_all, [Process.get(:registry)]}},
-      {3, {:add_device, [name_gen, measurements_gen, Process.get(:registry)]}},
-      {2, {:delete, [Enum.random(names), Process.get(:registry)]}}
-    ])
-  end
-
   defcommand :list_all do
-    def impl(), do: Device.list_all(Process.get(:registry))
+    def impl(), do: Device.list_all()
 
-    def post(names, _, {:ok, devices}) do
-      # Do this unsorted as a good example of a bug in a postcondition
-      Enum.sort(names) == devices |> Enum.map(& &1.name) |> Enum.sort()
+    def post(model, _, {:ok, devices}) do
+      devices |> Enum.map(& &1.name) |> assert_lists_equal(model)
     end
   end
 
   defcommand :add_device do
     def impl(name, measurements) do
-      Device.add_device(name, measurements, S3, Process.get(:registry))
+      Device.add_device(name, measurements, S3)
     end
 
     def post(_, [name, _], {:ok, _}) do
-      {:ok, devices} = Device.list_all(Process.get(:registry))
-      name in Enum.map(devices, & &1.name)
+      {:ok, devices} = Device.list_all()
+      Enum.any?(devices, fn device -> device.name == name end)
     end
 
     def post(_, _, _) do
       true
     end
 
-    def next(names, [name, _], {:ok, _}), do: [name | names]
-    def next(state, _, _), do: state
-  end
-
-  defcommand :delete do
-    def impl(name, registry), do: Device.delete(name, registry)
-
-    def post(_, [name], _) do
-      {:ok, devices} = Device.list_all(Process.get(:registry))
-      name not in Enum.map(devices, & &1.name)
-    end
-
-    def next(names, [name], _), do: List.delete(names, name)
+    def next(model, [name, _], {:ok, _}), do: [name | model]
+    def next(model, _, _), do: model
   end
 end
