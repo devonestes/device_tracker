@@ -1,28 +1,4 @@
 defmodule DeviceTracker.Devices.Device do
-  @moduledoc """
-  Represents a device. A device looks something like this:
-
-  %{
-    name: "Lightbulb",
-    group_name: "Living room",
-    power_status: :on,
-    max_measurements: 20,
-    measurements: %{
-      power_usage: %{
-        measurements: [23, 13, 81, 15],
-        max_measurements: 4,
-        in_warning: false,
-        warning_threshold: 50
-      },
-      amperage: %{
-        measurements: [21, 19, 19, 21, 32, 10],
-        max_measurements: 8,
-        in_warning: false,
-        warning_threshold: 35
-    }
-  }
-  """
-
   use Agent
 
   alias DeviceTracker.S3
@@ -31,7 +7,7 @@ defmodule DeviceTracker.Devices.Device do
 
   ### API
 
-  def start_link({measurements, name, registry}) do
+  def start_link({measurements, name}) do
     starting = fn ->
       %{
         name: name,
@@ -41,15 +17,15 @@ defmodule DeviceTracker.Devices.Device do
       }
     end
 
-    name = {:via, Registry, {registry, name}}
+    name = {:via, Registry, {DTR, name}}
     Agent.start_link(starting, name: name)
   end
 
-  def add_device(name, measurements, registry \\ DTR) do
+  def add_device(name, measurements) do
     response =
       DynamicSupervisor.start_child(
         DeviceTracker.DynamicSupervisor,
-        {__MODULE__, {measurements, name, registry}}
+        {__MODULE__, {measurements, name}}
       )
 
     case response do
@@ -62,9 +38,9 @@ defmodule DeviceTracker.Devices.Device do
     end
   end
 
-  def add_measurement(name, measurement, value, registry \\ DTR) do
+  def add_measurement(name, measurement, value) do
     name
-    |> pid_for(registry)
+    |> pid_for()
     |> Agent.update(fn measurements ->
       measurements =
         update_in(
@@ -76,32 +52,32 @@ defmodule DeviceTracker.Devices.Device do
       measurements
     end)
 
-    {:ok, measurements} = get_measurements(name, measurement, registry)
+    {:ok, measurements} = get_measurements(name, measurement)
     {:ok, %{measurement: measurement, measurements: measurements}}
   end
 
-  def get_measurements(name, measurement, registry \\ DTR) do
+  def get_measurements(name, measurement) do
     measurements =
       name
-      |> pid_for(registry)
+      |> pid_for()
       |> Agent.get(& &1[:measurements][String.to_atom(measurement)][:measurements])
 
     {:ok, measurements}
   end
 
-  def get(name, registry \\ DTR) do
-    case pid_for(name, registry) do
+  def get(name) do
+    case pid_for(name) do
       nil -> {:error, :not_found}
       pid -> {:ok, Agent.get(pid, & &1)}
     end
   end
 
-  def list_all(registry \\ DTR) do
+  def list_all() do
     devices =
-      registry
+      DTR
       |> Registry.select([{{:"$1", :_, :_}, [], [:"$1"]}])
       |> Enum.flat_map(fn name ->
-        case get(name, registry) do
+        case get(name) do
           {:ok, device} -> [device]
           _ -> []
         end
@@ -110,8 +86,8 @@ defmodule DeviceTracker.Devices.Device do
     {:ok, devices}
   end
 
-  def update(name, settings, registry \\ DTR) do
-    case pid_for(name, registry) do
+  def update(name, settings) do
+    case pid_for(name) do
       nil ->
         {:error, :device_not_found}
 
@@ -135,24 +111,24 @@ defmodule DeviceTracker.Devices.Device do
     end
   end
 
-  def delete(name, registry \\ DTR) do
-    pid = pid_for(name, registry)
-    device = get(name, registry)
+  def delete(name) do
+    pid = pid_for(name)
+    device = get(name)
     :ok = DynamicSupervisor.terminate_child(DeviceTracker.DynamicSupervisor, pid)
-    :ok = Registry.unregister(registry, name)
+    :ok = Registry.unregister(DTR, name)
     device
   end
 
-  def clear(registry \\ DTR) do
-    {:ok, devices} = list_all(registry)
-    Enum.map(devices, &delete(&1.name, registry))
+  def clear() do
+    {:ok, devices} = list_all()
+    Enum.map(devices, &delete(&1.name))
     :ok
   end
 
   ### PRIVATE FUNCTIONS
 
-  defp pid_for(name, registry) do
-    case Registry.lookup(registry, name) do
+  defp pid_for(name) do
+    case Registry.lookup(DTR, name) do
       [{pid, _} | _] -> pid
       _ -> nil
     end
