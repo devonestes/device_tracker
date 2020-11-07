@@ -9,6 +9,7 @@ defmodule DeviceTracker.MixProject do
       elixirc_paths: elixirc_paths(Mix.env()),
       compilers: [:phoenix, :gettext] ++ Mix.compilers(),
       start_permanent: Mix.env() == :prod,
+      preferred_cli_env: [ muzak: :test, "muzak.gen.config": :test],
       deps: deps()
     ]
   end
@@ -42,7 +43,8 @@ defmodule DeviceTracker.MixProject do
       {:assertions, "~> 0.15"},
       {:propcheck, "~> 1.0"},
       {:ex_aws_s3, ">= 2.0.0"},
-      {:mox, ">= 0.0.0"}
+      {:mox, ">= 0.0.0"},
+      {:muzak, path: "../muzak"}
     ]
   end
 end
